@@ -15,8 +15,9 @@ type App struct {
 	Artwork  string `json:"artworkUrl512,omitempty"`
 	Size     int64  `json:"fileSizeBytes,string,omitempty"`
 	// FileSize is a human-readable representation of Size in MB (e.g. "12.3 MB").
-	FileSize string  `json:"fileSize,omitempty"`
-	Price    float64 `json:"price,omitempty"`
+	FileSize  string  `json:"fileSize,omitempty"`
+	Price     float64 `json:"price,omitempty"`
+	Purchased bool    `json:"purchased,omitempty"`
 }
 
 type VersionHistoryInfo struct {
@@ -49,7 +50,8 @@ func (a App) MarshalZerologObject(event *zerolog.Event) {
 		Str("artwork", a.Artwork).
 		Int64("size", a.Size).
 		Str("fileSize", a.FileSize).
-		Float64("price", a.Price)
+		Float64("price", a.Price).
+		Bool("purchased", a.Purchased)
 }
 
 // UnmarshalJSON implements custom unmarshalling to prefer whichever artwork
