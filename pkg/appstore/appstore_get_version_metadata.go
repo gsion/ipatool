@@ -15,9 +15,17 @@ type GetVersionMetadataInput struct {
 	VersionID string
 }
 
+// GetVersionMetadataOutput contains parsed metadata for a specific version
+// as well as the raw response body for maximum inspectability.
 type GetVersionMetadataOutput struct {
-	DisplayVersion string
-	ReleaseDate    time.Time
+	DisplayVersion string                 `json:"displayVersion,omitempty"`
+	ReleaseDate    time.Time              `json:"releaseDate,omitempty"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	RawBody        string                 `json:"rawBody,omitempty"`
+	// FileSizeBytes is the numeric size in bytes when available in metadata.
+	FileSizeBytes int64 `json:"fileSizeBytes,omitempty"`
+	// FileSize is a human-readable representation (MB) of FileSizeBytes.
+	FileSize string `json:"fileSize,omitempty"`
 }
 
 func (t *appstore) GetVersionMetadata(input GetVersionMetadataInput) (GetVersionMetadataOutput, error) {
@@ -62,9 +70,28 @@ func (t *appstore) GetVersionMetadata(input GetVersionMetadataInput) (GetVersion
 		return GetVersionMetadataOutput{}, fmt.Errorf("failed to parse release date: %w", err)
 	}
 
+	// Get file size from the download URL by sending a HEAD request
+	var fileSizeBytes int64
+	if item.URL != "" {
+		fileSizeBytes, err = t.getFileSizeFromURL(item.URL)
+		if err != nil {
+			fileSizeBytes = 0
+		}
+	}
+
+	fileSizeStr := ""
+	if fileSizeBytes > 0 {
+		mb := float64(fileSizeBytes) / 1024.0 / 1024.0
+		fileSizeStr = fmt.Sprintf("%.1f MB", mb)
+	}
+
 	return GetVersionMetadataOutput{
 		DisplayVersion: fmt.Sprintf("%v", item.Metadata["bundleShortVersionString"]),
 		ReleaseDate:    releaseDate,
+		Metadata:       item.Metadata,
+		RawBody:        string(res.RawBody),
+		FileSizeBytes:  fileSizeBytes,
+		FileSize:       fileSizeStr,
 	}, nil
 }
 
@@ -91,4 +118,20 @@ func (t *appstore) getVersionMetadataRequest(acc Account, app App, guid string, 
 			Content: payload,
 		},
 	}
+}
+
+// getFileSizeFromURL retrieves the file size by sending a HEAD request to the download URL.
+func (t *appstore) getFileSizeFromURL(url string) (int64, error) {
+	req, err := t.httpClient.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create HEAD request: %w", err)
+	}
+
+	res, err := t.httpClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("failed to send HEAD request: %w", err)
+	}
+	defer res.Body.Close()
+
+	return res.ContentLength, nil
 }

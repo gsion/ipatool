@@ -143,6 +143,7 @@ func (c *client[R]) handleJSONResponse(res *http.Response) (Result[R], error) {
 
 	return Result[R]{
 		StatusCode: res.StatusCode,
+		RawBody:    body,
 		Data:       data,
 	}, nil
 }
@@ -168,6 +169,7 @@ func (c *client[R]) handleXMLResponse(res *http.Response) (Result[R], error) {
 	return Result[R]{
 		StatusCode: res.StatusCode,
 		Headers:    headers,
+		RawBody:    body,
 		Data:       data,
 	}, nil
 }

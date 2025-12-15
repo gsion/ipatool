@@ -15,13 +15,17 @@ type VersionMetadataResult struct {
 	ExternalVersionID string    `json:"externalVersionID"`
 	DisplayVersion    string    `json:"displayVersion"`
 	ReleaseDate       time.Time `json:"releaseDate"`
+	FileSizeBytes     int64     `json:"fileSizeBytes,omitempty"`
+	FileSize          string    `json:"fileSize,omitempty"`
 }
 
 // MarshalZerologObject implements zerolog.LogObjectMarshaler
 func (v VersionMetadataResult) MarshalZerologObject(e *zerolog.Event) {
 	e.Str("externalVersionID", v.ExternalVersionID).
 		Str("displayVersion", v.DisplayVersion).
-		Time("releaseDate", v.ReleaseDate)
+		Time("releaseDate", v.ReleaseDate).
+		Int64("fileSizeBytes", v.FileSizeBytes).
+		Str("fileSize", v.FileSize)
 }
 
 // MarshalZerologArray implements zerolog.LogArrayMarshaler for []VersionMetadataResult
@@ -109,6 +113,8 @@ func getVersionMetadataCmd() *cobra.Command {
 						ExternalVersionID: versionID,
 						DisplayVersion:    out.DisplayVersion,
 						ReleaseDate:       out.ReleaseDate,
+						FileSizeBytes:     out.FileSizeBytes,
+						FileSize:          out.FileSize,
 					})
 				}
 
