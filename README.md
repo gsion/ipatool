@@ -36,6 +36,13 @@ You can install `ipatool` using [Homebrew](https://brew.sh).
 $ brew install ipatool
 ```
 
+You can run anywhere， run webserver http://127.0.0.1:9527/
+
+```shell
+$./ipatool server 
+```
+
+
 ## Usage
 
 To authenticate with the App Store, use the `auth` command.
