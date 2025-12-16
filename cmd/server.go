@@ -12,10 +12,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/majd/ipatool/v2/pkg/appstore"
 	"github.com/majd/ipatool/v2/templates"
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -899,6 +901,16 @@ func handleIPADownload(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, file)
 }
 
+// progressWriter implements io.Writer for progress tracking via WebSocket
+type progressWriter struct {
+	conn *websocket.Conn
+}
+
+func (pw *progressWriter) Write(p []byte) (int, error) {
+	// This receives output from progressbar display, we just discard it
+	return len(p), nil
+}
+
 func handleDownload(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -976,21 +988,99 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Download the app
+	// Download the app with progress tracking
+	pw := &progressWriter{conn: conn}
+
+	// Send downloading message
+	sendWSMessage(conn, "download_progress", map[string]interface{}{
+		"stage":   "downloading",
+		"percent": 0,
+		"message": "开始下载文件...",
+	})
+
+	// Custom progress bar
+	bar := progressbar.NewOptions64(-1,
+		progressbar.OptionSetWriter(pw),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionSetWidth(10),
+		progressbar.OptionThrottle(100*time.Millisecond),
+		progressbar.OptionShowCount(),
+		progressbar.OptionOnCompletion(func() {}),
+	)
+
+	// Monitor progress in background
+	stopMonitor := make(chan bool)
+	go func() {
+		ticker := time.NewTicker(300 * time.Millisecond)
+		defer ticker.Stop()
+
+		lastPercent := 0
+		for {
+			select {
+			case <-ticker.C:
+				max := bar.GetMax64()
+				if max <= 0 {
+					continue
+				}
+
+				state := bar.State()
+				current := int64(state.CurrentBytes)
+
+				if current > 0 {
+					// Map download to 0-85%
+					percent := int(float64(current) / float64(max) * 85.0)
+					if percent > 85 {
+						percent = 85
+					}
+
+					if percent > lastPercent {
+						lastPercent = percent
+						sendWSMessage(conn, "download_progress", map[string]interface{}{
+							"stage":      "downloading",
+							"percent":    percent,
+							"message":    "下载中...",
+							"downloaded": current,
+							"total":      max,
+						})
+					}
+				}
+			case <-stopMonitor:
+				return
+			}
+		}
+	}()
+
 	downloadResult, err := dependencies.AppStore.Download(appstore.DownloadInput{
 		Account:           accountInfo.Account,
 		App:               app,
 		OutputPath:        outputPath,
 		ExternalVersionID: msg.VersionID,
-		Progress:          nil, // We'll handle progress differently
+		Progress:          bar,
 	})
+
+	// Stop monitoring
+	close(stopMonitor)
+	time.Sleep(100 * time.Millisecond) // Wait for goroutine to finish
 
 	if err != nil {
 		sendWSMessage(conn, "download_failed", fmt.Sprintf("Download failed: %v", err))
 		return
 	}
 
+	// Download complete, now processing (applyPatches happens inside Download above)
+	sendWSMessage(conn, "download_progress", map[string]interface{}{
+		"stage":   "processing",
+		"percent": 90,
+		"message": "下载完成，正在处理文件...",
+	})
+
 	// Replicate SINF
+	sendWSMessage(conn, "download_progress", map[string]interface{}{
+		"stage":   "replicating",
+		"percent": 95,
+		"message": "正在写入授权信息...",
+	})
+
 	err = dependencies.AppStore.ReplicateSinf(appstore.ReplicateSinfInput{
 		Sinfs:       downloadResult.Sinfs,
 		PackagePath: downloadResult.DestinationPath,

@@ -1654,15 +1654,26 @@
                 
                 switch (message.type) {
                     case 'download_started':
-                        statusSpan.textContent = message.message;
+                        statusSpan.textContent = message.data || 'Starting download...';
                         statusSpan.className = 'download-progress-status';
                         break;
                     
                     case 'download_progress':
-                        // 如果收到真实进度，更新动画进度
-                        currentProgress = Math.min(message.progress, 100);
+                        // 收到真实进度，停止假进度动画
+                        if (animationInterval) {
+                            clearInterval(animationInterval);
+                            animationInterval = null;
+                        }
+                        
+                        // 更新真实进度
+                        const data = message.data || {};
+                        const percent = data.percent || data.progress || 0;
+                        currentProgress = Math.min(percent, 100);
                         progressFill.style.width = currentProgress + '%';
-                        percentSpan.textContent = Math.round(currentProgress) + '%';                       
+                        percentSpan.textContent = Math.round(currentProgress) + '%';
+                        if (data.message) {
+                            statusSpan.textContent = data.message;
+                        }
                         statusSpan.className = 'download-progress-status';
                         break;
                     
@@ -1673,7 +1684,9 @@
                         currentProgress = 100;
                         progressFill.style.width = '100%';
                         percentSpan.textContent = '100%';
-                        statusSpan.textContent = '✓ 下载完成';
+                        
+                        const successData = message.data || {};
+                        statusSpan.textContent = successData.message || '✓ 下载完成';
                         statusSpan.className = 'download-progress-status success';
                         
                         btn.disabled = false;
@@ -1697,7 +1710,7 @@
                         isDownloading = false;
                         if (animationInterval) clearInterval(animationInterval);
                         
-                        statusSpan.textContent = '✗ 下载失败: ' + message.message;
+                        statusSpan.textContent = '✗ 下载失败: ' + (message.data || 'Unknown error');
                         statusSpan.className = 'download-progress-status error';
                         
                         btn.disabled = false;
