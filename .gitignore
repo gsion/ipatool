@@ -3,4 +3,6 @@
 .LSOverride
 .vscode/
 .idea/
+pkg
 **/*_mock.go
+appstore/

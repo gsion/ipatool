@@ -122,6 +122,7 @@ func (t *appstore) getVersionMetadataRequest(acc Account, app App, guid string, 
 
 // getFileSizeFromURL retrieves the file size by sending a HEAD request to the download URL.
 func (t *appstore) getFileSizeFromURL(url string) (int64, error) {
+	// Try HEAD request first
 	req, err := t.httpClient.NewRequest("HEAD", url, nil)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create HEAD request: %w", err)
@@ -133,5 +134,20 @@ func (t *appstore) getFileSizeFromURL(url string) (int64, error) {
 	}
 	defer res.Body.Close()
 
-	return res.ContentLength, nil
+	// If ContentLength is available, return it
+	if res.ContentLength > 0 {
+		return res.ContentLength, nil
+	}
+
+	// Otherwise, try to get it from Content-Length header
+	contentLength := res.Header.Get("Content-Length")
+	if contentLength != "" {
+		var size int64
+		_, err := fmt.Sscanf(contentLength, "%d", &size)
+		if err == nil && size > 0 {
+			return size, nil
+		}
+	}
+
+	return 0, nil
 }

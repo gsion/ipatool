@@ -24,6 +24,7 @@ import (
 
 var dependencies = Dependencies{}
 var keychainPassphrase string
+var isServerMode bool // Flag to indicate if running in server mode
 
 type Dependencies struct {
 	Logger    log.Logger
@@ -70,26 +71,41 @@ func newKeychain(machine machine.Machine, logger log.Logger, interactive bool) k
 		ServiceName: KeychainServiceName,
 		FileDir:     filepath.Join(machine.HomeDirectory(), ConfigDirectoryName),
 		FilePasswordFunc: func(s string) (string, error) {
-			if keychainPassphrase == "" && !interactive {
-				return "", errors.New("keychain passphrase is required when not running in interactive mode; use the \"--keychain-passphrase\" flag")
-			}
-
+			// First check if we have passphrase in memory
 			if keychainPassphrase != "" {
+				logger.Log().Msg("🔐 Using keychain passphrase from memory")
 				return keychainPassphrase, nil
 			}
 
-			path := strings.Split(s, " unlock ")[1]
-			logger.Log().Msgf("enter passphrase to unlock %s (this is separate from your Apple ID password): ", path)
-			bytes, err := term.ReadPassword(int(os.Stdin.Fd()))
-			if err != nil {
-				return "", fmt.Errorf("failed to read password: %w", err)
+			// Try to load from file
+			if data, err := os.ReadFile("passphrase.txt"); err == nil && len(data) > 0 {
+				passphrase := strings.TrimSpace(string(data))
+				if passphrase != "" {
+					keychainPassphrase = passphrase
+					logger.Log().Msg("🔐 Loaded keychain passphrase from file")
+					return passphrase, nil
+				}
 			}
 
-			password := string(bytes)
-			password = strings.Trim(password, "\n")
-			password = strings.Trim(password, "\r")
+			// Check if stdin is a terminal (true for CLI, false for server/background)
+			if interactive && !isServerMode {
+				// Only prompt if not in server mode (CLI mode)
+				path := strings.Split(s, " unlock ")[1]
+				logger.Log().Msgf("enter passphrase to unlock %s (this is separate from your Apple ID password): ", path)
+				bytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+				if err != nil {
+					return "", fmt.Errorf("failed to read password: %w", err)
+				}
+				password := string(bytes)
+				password = strings.Trim(password, "\n")
+				password = strings.Trim(password, "\r")
+				return password, nil
+			}
 
-			return password, nil
+			// Server mode or no passphrase available
+			// This will trigger the WebSocket request flow in server mode
+			logger.Log().Msg("⚠️ Keychain passphrase required but not available")
+			return "", errors.New("passphrase required")
 		},
 	}))
 

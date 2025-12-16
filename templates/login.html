@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .message.error {
+            background: #fee;
+            color: #c33;
+            display: block;
+            border: 1px solid #fcc;
+        }
+        
+        .message.success {
+            background: #efe;
+            color: #3c3;
+            display: block;
+            border: 1px solid #cfc;
+        }
+        
+        .message.info {
+            background: #eef;
+            color: #33c;
+            display: block;
+            border: 1px solid #ccf;
+        }
+        
+        .output-box {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+            display: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .output-box.active {
+            display: block;
+        }
+        
+        .input-box {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .input-box.active {
+            display: block;
+        }
+        
+        .input-box input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        
+        .form-section {
+            display: block;
+        }
+        
+        .form-section.hidden {
+            display: none;
+        }
+        
+        .user-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+        }
+        
+        .user-info-card h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .user-info-grid.full {
+            grid-template-columns: 1fr;
+        }
+        
+        .info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 3px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .info-label {
+            font-size: 12px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+        }
+        
+        .logout-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1 class="login-title">登录</h1>
+        
+        <!-- 登录表单 -->
+        <div id="loginSection" class="form-section">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">账号</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        placeholder="请输入账号"
+                        required
+                        autofocus
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="请输入密码"
+                        required
+                    >
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">
+                    登录
+                </button>
+                
+                <div class="message" id="message"></div>
+            </form>
+        </div>
+        
+        <!-- 用户信息展示 -->
+        <div id="userInfoSection" class="form-section hidden">
+            <div class="user-info-card">
+                <h2>✓ 账户已登陆</h2>
+                <div id="userInfoContent" class="user-info-grid"></div>
+            </div>
+            <button id="gotoMainBtn" class="login-btn" style="margin-bottom: 15px;">
+                进入主页
+            </button>
+            <button id="logoutBtn" class="logout-btn">
+                退出登陆
+            </button>
+        </div>
+        
+        <!-- 交互界面 -->
+        <div id="interactionSection" class="form-section hidden">
+            <div class="output-box" id="outputBox"></div>
+            <div class="input-box" id="inputBox">
+                <input 
+                    type="text" 
+                    id="interactionInput" 
+                    placeholder="请输入响应"
+                    autocomplete="off"
+                >
+                <button id="submitInteractionBtn" class="login-btn" style="margin-top: 10px;">
+                    提交
+                </button>
+            </div>
+            <div class="message" id="interactionMessage"></div>
+        </div>
+    </div>
+    
+    <script>
+        let loginSocket = null;
+        let loginCredentials = {
+            username: null,
+            password: null,
+            keychainPassphrase: null
+        };
+        
+        // 页面加载时检查登陆状态
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatus();
+        });
+        
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/terminal/check-login', {
+                    method: 'GET'
+                });
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.logged_in) {
+                    // 已登陆，显示用户信息
+                    showUserInfo(data.data);
+                }
+                // 如果未登陆，保持默认的登陆表单显示
+            } catch (error) {
+                // 检查失败，保持默认状态
+                console.error('检查登录状态失败:', error);
+            }
+        }
+        
+        function showUserInfo(userInfo) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('userInfoSection').classList.remove('hidden');
+            
+            // 格式化用户信息为卡片风格
+            const infoContainer = document.getElementById('userInfoContent');
+            infoContainer.innerHTML = '';
+            
+            if (typeof userInfo === 'object') {
+                Object.entries(userInfo).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined) {
+                        const item = document.createElement('div');
+                        item.className = 'info-item';
+                        
+                        const label = document.createElement('div');
+                        label.className = 'info-label';
+                        label.textContent = key;
+                        
+                        const valueEl = document.createElement('div');
+                        valueEl.className = 'info-value';
+                        
+                        // 处理不同类型的值
+                        if (typeof value === 'object') {
+                            valueEl.textContent = JSON.stringify(value);
+                        } else {
+                            valueEl.textContent = String(value);
+                        }
+                        
+                        item.appendChild(label);
+                        item.appendChild(valueEl);
+                        infoContainer.appendChild(item);
+                    }
+                });
+            } else {
+                const item = document.createElement('div');
+                item.className = 'info-item full';
+                const valueEl = document.createElement('div');
+                valueEl.className = 'info-value';
+                valueEl.textContent = JSON.stringify(userInfo, null, 2);
+                item.appendChild(valueEl);
+                infoContainer.appendChild(item);
+            }
+            
+            // 进入主页按钮
+            const gotoMainBtn = document.getElementById('gotoMainBtn');
+            gotoMainBtn.onclick = () => {
+                window.location.href = '/main';
+            };
+            
+            // 退出登陆按钮
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.onclick = handleLogout;
+        }
+        
+        async function handleLogout(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = '退出中...';
+            
+            try {
+                const response = await fetch('/terminal/logout', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 退出成功，跳转到登录页
+                    window.location.href = '/login';
+                } else {
+                    alert('退出登陆失败: ' + data.message);
+                    logoutBtn.disabled = false;
+                    logoutBtn.textContent = '退出登陆';
+                }
+            } catch (error) {
+                alert('退出登陆出错: ' + error.message);
+                logoutBtn.disabled = false;
+                logoutBtn.textContent = '退出登陆';
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 检查是否处于 passphrase 验证模式
+            const passphraseInput = document.getElementById('keychainPassphrase');
+            if (passphraseInput && passphraseInput.style.display !== 'none') {
+                // 处于 passphrase 验证模式，用 passphrase + --keychain-passphrase 参数重新登录
+                const passphrase = passphraseInput.value.trim();
+                if (passphrase && loginCredentials.username && loginCredentials.password) {
+                    const loginBtn = document.getElementById('loginBtn');
+                    const messageEl = document.getElementById('message');
+                    
+                    loginBtn.disabled = true;
+                    
+                    // 隐藏 passphrase 输入框
+                    passphraseInput.style.display = 'none';
+                    document.querySelector('label[for="keychainPassphrase"]').style.display = 'none';
+                    
+                    messageEl.textContent = '正在验证...';
+                    messageEl.className = 'message info';
+                    messageEl.style.display = 'block';
+                    
+                    // 保存 passphrase
+                    loginCredentials.keychainPassphrase = passphrase;
+                    
+                    // 重新连接并使用 --keychain-passphrase 参数登录
+                    connectLoginWebSocket(loginCredentials.username, loginCredentials.password, true);
+                } else {
+                    alert('请输入 Keychain Passphrase');
+                }
+                return;
+            }
+            
+            // 普通登录模式
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+            const messageEl = document.getElementById('message');
+            
+            if (!username || !password) {
+                messageEl.textContent = '账号和密码不能为空';
+                messageEl.className = 'message error';
+                messageEl.style.display = 'block';
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            messageEl.textContent = '正在连接...';
+            messageEl.className = 'message info';
+            messageEl.style.display = 'block';
+            
+            // 保存凭证供后续使用
+            loginCredentials.username = username;
+            loginCredentials.password = password;
+            
+            connectLoginWebSocket(username, password);
+        });
+        
+        function connectLoginWebSocket(username, password, useKeychain = false) {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const url = `${protocol}//${window.location.host}/ws/login/`;
+            
+            loginSocket = new WebSocket(url);
+            
+            loginSocket.onopen = () => {
+                const message = {
+                    type: 'start_login',
+                    username: username,
+                    password: password
+                };
+                
+                // 如果需要使用 keychain passphrase
+                if (useKeychain && loginCredentials.keychainPassphrase) {
+                    message.keychain_passphrase = loginCredentials.keychainPassphrase;
+                }
+                
+                loginSocket.send(JSON.stringify(message));
+            };
+            
+            loginSocket.onmessage = (e) => {
+                const message = JSON.parse(e.data);
+                handleLoginMessage(message);
+            };
+            
+            loginSocket.onerror = (error) => {
+                const messageEl = document.getElementById('message');
+                const loginBtn = document.getElementById('loginBtn');
+                
+                messageEl.textContent = 'WebSocket 连接错误';
+                messageEl.className = 'message error';
+                messageEl.style.display = 'block';
+                loginBtn.disabled = false;
+                
+                // 重置 2FA 状态
+                if (loginCredentials.requires2fa) {
+                    loginCredentials.requires2fa = false;
+                    // 恢复输入框
+                    document.getElementById('username').disabled = false;
+                    document.getElementById('password').disabled = false;
+                    loginBtn.textContent = '登录';
+                }
+            };
+            
+            loginSocket.onclose = () => {
+                // 2FA 需要时已在 handleLoginMessage 中处理
+            };
+        }
+        
+        function handleLoginMessage(message) {
+            const outputBox = document.getElementById('outputBox');
+            const inputBox = document.getElementById('inputBox');
+            const messageEl = document.getElementById('message');
+            const loginSection = document.getElementById('loginSection');
+            const interactionSection = document.getElementById('interactionSection');
+            const interactionMessage = document.getElementById('interactionMessage');
+            const loginBtn = document.getElementById('loginBtn');
+            
+            switch (message.type) {
+                case 'login_started':
+                    loginSection.classList.add('hidden');
+                    interactionSection.classList.remove('hidden');
+                    outputBox.classList.add('active');
+                    outputBox.textContent = '登录中...\n';
+                    inputBox.classList.remove('active');
+                    break;
+                
+                case 'output':
+                    outputBox.textContent += message.data + '\n';
+                    outputBox.scrollTop = outputBox.scrollHeight;
+                    
+                    // 检测是否需要 keychain passphrase
+                    if (message.data.includes('enter passphrase to unlock')) {
+                        // 关闭 WebSocket 连接，等待用户输入 passphrase
+                        if (loginSocket) {
+                            loginSocket.close();
+                        }
+                        
+                        // 回到登陆表单
+                        interactionSection.classList.add('hidden');
+                        loginSection.classList.remove('hidden');
+                        
+                        // 清空并隐藏账号和密码框，移除 required 属性
+                        document.getElementById('username').value = '';
+                        document.getElementById('username').removeAttribute('required');
+                        document.getElementById('username').style.display = 'none';
+                        
+                        document.getElementById('password').value = '';
+                        document.getElementById('password').removeAttribute('required');
+                        document.getElementById('password').style.display = 'none';
+                        
+                        document.querySelector('label[for="username"]').style.display = 'none';
+                        document.querySelector('label[for="password"]').style.display = 'none';
+                        
+                        // 创建或显示 passphrase 输入框
+                        let passphraseGroup = document.getElementById('passphraseGroup');
+                        if (!passphraseGroup) {
+                            passphraseGroup = document.createElement('div');
+                            passphraseGroup.className = 'form-group';
+                            passphraseGroup.id = 'passphraseGroup';
+                            
+                            const label = document.createElement('label');
+                            label.setAttribute('for', 'keychainPassphrase');
+                            label.textContent = 'Keychain Passphrase';
+                            label.id = 'passphraseLabel';
+                            
+                            const input = document.createElement('input');
+                            input.type = 'password';
+                            input.id = 'keychainPassphrase';
+                            input.name = 'keychainPassphrase';
+                            input.placeholder = '请输入 Keychain Passphrase';
+                            input.autocomplete = 'off';
+                            
+                            passphraseGroup.appendChild(label);
+                            passphraseGroup.appendChild(input);
+                            
+                            document.getElementById('loginForm').insertBefore(passphraseGroup, loginBtn);
+                        }
+                        
+                        // 显示 passphrase 输入框并聚焦
+                        document.getElementById('keychainPassphrase').style.display = 'block';
+                        document.getElementById('keychainPassphrase').value = '';
+                        document.getElementById('keychainPassphrase').focus();
+                        const passphraseLabel = document.getElementById('passphraseLabel') || document.querySelector('label[for="keychainPassphrase"]');
+                        if (passphraseLabel) {
+                            passphraseLabel.style.display = 'block';
+                        }
+                        
+                        // 更新按钮文本
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = '验证';
+                        
+                        messageEl.textContent = '需要输入 Keychain Passphrase';
+                        messageEl.className = 'message info';
+                        messageEl.style.display = 'block';
+                    } else if (message.data.includes('?') || 
+                        message.data.includes('(y/n)') ||
+                        message.data.includes('(y/n)') ||
+                        message.data.includes('(Y/N)') ||
+                        message.data.includes('输入') ||
+                        message.data.includes('confirm')) {
+                        inputBox.classList.add('active');
+                        document.getElementById('interactionInput').focus();
+                    }
+                    break;
+                
+                case 'need_input':
+                    // 服务器需要输入（比如 2FA 验证码）
+                    outputBox.textContent += message.data + '\n';
+                    const input2fa = document.getElementById('interactionInput');
+                    input2fa.type = 'text';
+                    input2fa.placeholder = '请输入 2FA 验证码';
+                    inputBox.classList.add('active');
+                    input2fa.focus();
+                    window.waitingForPassphrase = false;
+                    break;
+                
+                case 'need_passphrase':
+                    // 需要 keychain passphrase - 在交互框中显示输入提示
+                    const inputPass = document.getElementById('interactionInput');
+                    inputPass.type = 'password';
+                    inputPass.placeholder = '请输入 Keychain Passphrase';
+                    inputBox.classList.add('active');
+                    inputPass.focus();
+                    // 标记当前等待 passphrase 输入
+                    window.waitingForPassphrase = true;
+                    break;
+                
+                case 'login_success':
+                    outputBox.textContent += '\n✓ 登录成功\n';
+                    interactionMessage.textContent = message.message;
+                    interactionMessage.className = 'message success';
+                    inputBox.classList.remove('active');
+                    
+                    if (message.data) {
+                        sessionStorage.setItem('loginData', JSON.stringify(message.data));
+                        
+                        // 显示用户信息
+                        let userInfoText = '\n---用户信息---\n';
+                        if (typeof message.data === 'object') {
+                            Object.entries(message.data).forEach(([key, value]) => {
+                                if (value !== null && value !== undefined) {
+                                    userInfoText += `${key}: ${JSON.stringify(value)}\n`;
+                                }
+                            });
+                        } else {
+                            userInfoText += JSON.stringify(message.data);
+                        }
+                        outputBox.textContent += userInfoText;
+                        outputBox.scrollTop = outputBox.scrollHeight;
+                    }
+                    
+                    // 自动跳转到主页面
+                    setTimeout(() => {
+                        window.location.href = '/main';
+                    }, 2000);
+                    break;
+                
+                case 'login_failed':
+                    // 回到登录表单
+                    interactionSection.classList.add('hidden');
+                    loginSection.classList.remove('hidden');
+                    
+                    const messageEl = document.getElementById('message');
+                    messageEl.textContent = message.data || message.message || '登录失败';
+                    messageEl.className = 'message error';
+                    messageEl.style.display = 'block';
+                    
+                    // 清空密码框
+                    document.getElementById('password').value = '';
+                    document.getElementById('password').focus();
+                    
+                    // 恢复登录按钮
+                    loginBtn.textContent = '登录';
+                    loginBtn.disabled = false;
+                    break;
+                
+                case 'error':
+                    interactionMessage.textContent = message.message;
+                    interactionMessage.className = 'message error';
+                    outputBox.textContent += '\n✗ ' + message.message + '\n';
+                    inputBox.classList.remove('active');
+                    loginBtn.disabled = false;
+                    break;
+            }
+        }
+        
+        // 提交交互输入的函数
+        function submitInteractionInput() {
+            const input = document.getElementById('interactionInput');
+            const value = input.value;
+            if (value && loginSocket && loginSocket.readyState === WebSocket.OPEN) {
+                loginSocket.send(JSON.stringify({
+                    type: 'input',
+                    data: {
+                        input: value
+                    }
+                }));
+                input.value = '';
+                input.type = 'text'; // 重置为文本类型
+                input.placeholder = '请输入响应';
+                input.focus();
+            }
+        }
+        
+        // 回车键提交
+        document.getElementById('interactionInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitInteractionInput();
+            }
+        });
+        
+        // 提交按钮点击
+        document.getElementById('submitInteractionBtn').addEventListener('click', () => {
+            submitInteractionInput();
+        });
+    </script>
+</body>
+</html>

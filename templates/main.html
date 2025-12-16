@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App 搜索</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        /* 用户信息部分 */
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .user-info-section {
+            flex: 1;
+        }
+        
+        .user-info-section h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .user-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .info-item {
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .info-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        
+        .info-value {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .logout-section {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 搜索部分 */
+        .search-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .search-title {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #searchInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        #searchInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .search-limit {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            min-width: 80px;
+        }
+        
+        .search-limit:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        #searchBtn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        #searchBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        #searchBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 搜索结果 */
+        .results-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        
+        .results-section.active {
+            display: block;
+        }
+        
+        .results-title {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            grid-column: 1 / -1;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-content {
+            max-height: 600px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .result-item {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            position: relative;
+        }
+        
+        .result-item:hover {
+            background: #f9f9f9;
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
+        }
+        
+        .result-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+        
+        .result-info {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* 购买状态徽章 - 右上角 */
+        .purchased-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #10b981;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+        }
+        
+        /* 购买状态角标 */
+        .status-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+        
+        .status-badge.purchased {
+            background: #10b981;
+        }
+        
+        .status-badge.not-purchased {
+            background: #ef4444;
+        }
+        
+        .result-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .error-message {
+            padding: 15px;
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+            border-radius: 5px;
+            margin-top: 15px;
+            grid-column: 1 / -1;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            grid-column: 1 / -1;
+        }
+        
+        .message {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+            display: block;
+        }
+        
+        .message.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+            display: block;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+        
+        .modal-header h2 {
+            color: #333;
+            font-size: 18px;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .version-item {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .version-item:hover {
+            background: #f9f9f9;
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
+        }
+        
+        .version-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .version-number {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .version-size {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .version-details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .version-detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        
+        .version-label {
+            color: #999;
+            min-width: 80px;
+        }
+        
+        .version-value {
+            color: #333;
+            word-break: break-all;
+        }
+        
+        .result-item {
+            cursor: pointer;
+        }
+
+        /* 封面样式 */
+        .result-art {
+            width: 80px;
+            height: 80px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .result-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .result-art-placeholder {
+            color: #999;
+            font-size: 12px;
+            padding: 6px;
+            text-align: center;
+        }
+
+        .result-body {
+            flex: 1;
+            min-width: 0; /* allow text overflow handling */
+        }
+        
+        /* 购买状态徽章 */
+        .purchased-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            background: #10b981;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .pagination-info {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .load-more-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .load-more-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .load-more-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .download-btn {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .download-btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .download-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .download-btn.downloading {
+            background: #999;
+        }
+        
+        /* 下载进度 */
+        .download-progress-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            width: 320px;
+            max-width: 320px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .download-progress-container.hide {
+            animation: slideOut 0.3s ease-out forwards;
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        
+        .download-progress-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .download-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+        
+        .download-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            border-radius: 3px;
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes progressPulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        .download-progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+        
+        .download-percent {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        
+        .download-details {
+            flex-shrink: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-left: 4px;
+            display: none;
+        }
+        
+        .download-progress-status {
+            font-size: 12px;
+            color: #999;
+            margin-top: 6px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            max-height: 40px;
+            overflow-y: auto;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+        
+        .download-progress-status.success {
+            color: #28a745;
+        }
+        
+        .download-progress-status.error {
+            color: #dc3545;
+        }
+        
+        /* 标签导航 */
+        .tab-button {
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 5px 5px 0 0;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 5px;
+            transition: all 0.3s;
+            color: #666;
+        }
+        
+        .tab-button:hover {
+            background: #f9f9f9;
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .tab-button.active {
+            background: white;
+            border-color: #667eea;
+            color: #667eea;
+            border-bottom-color: white;
+        }
+        
+        /* IPA 管理部分 */
+        .ipa-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .ipa-title {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .ipa-bundle {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .ipa-bundle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .ipa-bundle-header:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .ipa-bundle-title {
+            font-weight: bold;
+            color: #333;
+            flex: 1;
+        }
+        
+        .ipa-bundle-info {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .ipa-toggle {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .ipa-files {
+            display: none;
+        }
+        
+        .ipa-files.show {
+            display: block;
+        }
+        
+        .ipa-file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .ipa-file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .ipa-file-info {
+            flex: 1;
+        }
+        
+        .ipa-file-name {
+            font-weight: 500;
+            color: #333;
+            font-size: 13px;
+            word-break: break-all;
+        }
+        
+        .ipa-file-meta {
+            font-size: 11px;
+            color: #999;
+            margin-top: 3px;
+        }
+        
+        .ipa-file-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .ipa-action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .ipa-download-btn {
+            background: #667eea;
+            color: white;
+        }
+        
+        .ipa-download-btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .ipa-delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .ipa-delete-btn:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        }
+        
+        .ipa-action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .ipa-empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        /* 响应式设计 - 手机端优化 */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .header {
+                flex-direction: column;
+                padding: 16px;
+                gap: 16px;
+            }
+            
+            .user-info-section h2 {
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+            
+            .user-info-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            
+            .info-item {
+                padding: 8px;
+            }
+            
+            .info-label {
+                font-size: 10px;
+                margin-bottom: 2px;
+            }
+            
+            .info-value {
+                font-size: 11px;
+            }
+            
+            .logout-section {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+            }
+            
+            .search-section, .results-section, .ipa-section {
+                padding: 12px;
+            }
+            
+            .results-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .result-item {
+                flex-direction: row;
+                align-items: flex-start;
+                padding: 12px;
+                padding-top: 12px;
+            }
+            
+            .result-art {
+                width: 60px;
+                height: 60px;
+                flex-shrink: 0;
+            }
+            
+            .result-body {
+                width: 100%;
+                height: 60px !important;
+            }
+            
+            .result-title {
+                font-size: 14px;
+            }
+            
+            .result-info {
+                font-size: 12px;
+            }
+            
+            .modal-content {
+                padding: 16px;
+            }
+            
+            .version-item {
+                padding: 12px;
+            }
+            
+            .download-progress-container {
+                width: calc(100% - 24px);
+                left: 12px;
+                right: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 用户信息头部 -->
+        <div class="header">
+            <div class="user-info-section">
+                <h2>👤 账户信息</h2>
+                <div class="user-info-grid" id="userInfoContent"></div>
+            </div>
+            <div class="logout-section">
+                <button id="logoutBtn" class="btn btn-danger">退出登陆</button>
+            </div>
+        </div>
+        
+        <!-- 导航标签 -->
+        <div style="margin-bottom: 20px;">
+            <button id="tabSearch" class="tab-button active" data-tab="search">🔍 搜索应用</button>
+            <button id="tabIpa" class="tab-button" data-tab="ipa">📦 IPA 管理</button>
+        </div>
+        
+        <!-- 搜索部分 -->
+        <div class="search-section" id="searchSection">
+            <div class="search-title">🔍 搜索应用</div>
+            <div class="message" id="message"></div>
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="输入应用名称..." 
+                    autocomplete="off"
+                >
+                <button id="searchBtn">搜索</button>
+            </div>
+        </div>
+        
+        <!-- IPA 管理部分 -->
+        <div class="ipa-section" id="ipaSection" style="display: none;">
+            <div class="ipa-title">📦 IPA 文件管理</div>
+            <div id="ipaContent" style="min-height: 200px;"></div>
+        </div>
+        
+        <!-- 搜索结果 -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-title" id="resultsTitle"></div>
+            <div class="results-content" id="resultsContent"></div>
+        </div>
+    </div>
+    
+    <!-- 版本列表模态框 -->
+    <div class="modal" id="versionsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="versionAppName">应用版本列表</h2>
+                <button class="modal-close" id="closeVersionsBtn">&times;</button>
+            </div>
+            <div id="versionsContent" style="min-height: 200px;"></div>
+            <div class="pagination" id="versionsPagination" style="display: none;">
+                <span class="pagination-info" id="paginationInfo"></span>
+                <button class="load-more-btn" id="loadMoreBtn">加载更多</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 页面加载时获取用户信息
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserInfo();
+        });
+        
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/terminal/check-login', {
+                    method: 'GET'
+                });
+                const data = await response.json();
+                if (data.success && data.data && data.data.logged_in) {
+                    displayUserInfo(data.data);
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                window.location.href = '/login';
+            }
+        }
+        
+        function displayUserInfo(userInfo) {
+            const container = document.getElementById('userInfoContent');
+            container.innerHTML = '';
+            
+            if (typeof userInfo === 'object') {
+                const excludeKeys = new Set(['success']);
+                Object.entries(userInfo).forEach(([key, value]) => {
+                    // 跳过不需要显示的字段
+                    if (excludeKeys.has(String(key).toLowerCase())) return;
+                    if (value !== null && value !== undefined) {
+                        const item = document.createElement('div');
+                        item.className = 'info-item';
+                        
+                        const label = document.createElement('div');
+                        label.className = 'info-label';
+                        label.textContent = key;
+                        
+                        const valueEl = document.createElement('div');
+                        valueEl.className = 'info-value';
+                        
+                        if (typeof value === 'object') {
+                            valueEl.textContent = JSON.stringify(value);
+                        } else {
+                            valueEl.textContent = String(value);
+                        }
+                        
+                        item.appendChild(label);
+                        item.appendChild(valueEl);
+                        container.appendChild(item);
+                    }
+                });
+            }
+            
+            // 设置退出登陆按钮
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        }
+        
+        async function handleLogout() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = '退出中...';
+            
+            try {
+                const response = await fetch('/terminal/logout', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = '/login';
+                } else {
+                    alert('退出登陆失败: ' + data.message);
+                    logoutBtn.disabled = false;
+                    logoutBtn.textContent = '退出登陆';
+                }
+            } catch (error) {
+                alert('退出登陆出错');
+                logoutBtn.disabled = false;
+                logoutBtn.textContent = '退出登陆';
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // 搜索功能
+        document.getElementById('searchBtn').addEventListener('click', performSearch);
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+        
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            const messageEl = document.getElementById('message');
+            const searchBtn = document.getElementById('searchBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            if (!query) {
+                messageEl.textContent = '请输入搜索关键词';
+                messageEl.className = 'message error';
+                return;
+            }
+            
+            // 检查是否是 bundle id（包含点号）
+            if (query.includes('.')) {
+                // 直接作为 bundle id 打开版本列表，不进行搜索
+                showVersionsListByBundleId(query);
+                return;
+            }
+            
+            // 否则进行正常的搜索
+            const limit = 8;
+            messageEl.className = 'message';
+            searchBtn.disabled = true;
+            searchBtn.textContent = '搜索中...';
+            
+            resultsSection.classList.add('active');
+            resultsContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div>正在搜索...</div>';
+            
+            try {
+                const response = await fetch(`/terminal/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+                    method: 'GET'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data.data, query);
+                    messageEl.className = 'message';
+                } else {
+                    resultsContent.innerHTML = `<div class="error-message">${data.message}</div>`;
+                    messageEl.textContent = data.message;
+                    messageEl.className = 'message error';
+                }
+            } catch (error) {
+                resultsContent.innerHTML = '<div class="error-message">搜索出错，请稍后重试</div>';
+                messageEl.textContent = '搜索出错';
+                messageEl.className = 'message error';
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = '搜索';
+            }
+        }
+        
+        function displayResults(data, query) {
+            const resultsTitle = document.getElementById('resultsTitle');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            // 处理不同格式的返回数据
+            let results = [];
+            
+            if (Array.isArray(data)) {
+                results = data;
+            } else if (data.apps && Array.isArray(data.apps)) {
+                results = data.apps;
+            } else if (typeof data === 'object') {
+                // 如果是单个对象，转换为数组
+                results = [data];
+            }
+            
+            if (results.length === 0) {
+                resultsTitle.textContent = `搜索结果：未找到 "${query}" 相关应用`;
+                resultsContent.innerHTML = '<div class="no-results">没有找到相关应用</div>';
+                return;
+            }
+            
+            resultsTitle.textContent = `搜索结果：找到 ${results.length} 个应用`;
+            resultsContent.innerHTML = '';
+            
+            results.forEach((item, index) => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                // 提取标题
+                let title = '';
+                if (item.title) title = item.title;
+                else if (item.name) title = item.name;
+                else if (item.trackName) title = item.trackName;
+                else title = `应用 ${index + 1}`;
+
+                // 尝试提取文件大小（兼容多种可能的字段名）
+                let fileSize = '';
+                try {
+                    if (item.fileSizeBytes) fileSize = formatBytes(item.fileSizeBytes);
+                    else if (item.fileSize) fileSize = formatBytes(item.fileSize);
+                    else if (item.size) fileSize = formatBytes(item.size);
+                    else if (item.file_size) fileSize = formatBytes(item.file_size);
+                    else if (item.fileSizeDisplay) fileSize = item.fileSizeDisplay;
+                } catch (e) {
+                    // 若 formatBytes 抛错，回退为原始值（字符串）
+                    if (item.fileSizeDisplay) fileSize = item.fileSizeDisplay;
+                }
+
+                resultItem.innerHTML = `
+                    <span class="status-badge ${item.purchased ? 'purchased' : 'not-purchased'}"></span>
+                    <div class="result-art">
+                        ${item.artwork ? `<img src="${escapeHtml(item.artwork)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.replaceWith(document.createElement('div'))" />` : `<div class="result-art-placeholder">封面</div>`}
+                    </div>
+                    <div class="result-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 80px;">
+                        <div class="result-title">${escapeHtml(title)}</div>
+                        ${item.bundleID ? `<div style="font-size: 11px; color: #999;">${escapeHtml(item.bundleID)}</div>` : ''}
+                        <div class="result-info">
+                            ${item.artist ? `<span>👤 ${escapeHtml(item.artist)}</span>` : ''}
+                            ${item.version ? `<span>📦 v${escapeHtml(item.version)}</span>` : ''}
+                            ${item.fileSize ? `<span>💾 ${escapeHtml(item.fileSize)}</span>` : ''}
+                            ${item.price !== undefined ? `<span>💰 ${item.price === 0 ? '免费' : '$' + item.price}</span>` : ''}
+                            ${item.rating ? `<span>⭐ ${item.rating}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // 绑定点击事件查看版本列表
+                resultItem.addEventListener('click', () => {
+                    if (item.bundleID) {
+                        showVersionsList(item.bundleID, title);
+                    }
+                });
+                
+                resultsContent.appendChild(resultItem);
+            });
+        }
+        
+        async function showVersionsListByBundleId(bundleID) {
+            const modal = document.getElementById('versionsModal');
+            const versionsContent = document.getElementById('versionsContent');
+            const versionAppName = document.getElementById('versionAppName');
+            
+            versionAppName.textContent = `${bundleID} - 版本列表`;
+            versionsContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div>加载版本列表中...</div>';
+            
+            modal.classList.add('active');
+            
+            // 保存 bundleID 信息
+            document.getElementById('versionsContent').dataset.bundleId = bundleID;
+            document.getElementById('versionsContent').dataset.appId = '';
+            
+            loadVersionsPageByBundleId(bundleID, 1);
+        }
+        
+        async function showVersionsList(bundleID, appName) {
+            const modal = document.getElementById('versionsModal');
+            const versionsContent = document.getElementById('versionsContent');
+            const versionAppName = document.getElementById('versionAppName');
+            
+            versionAppName.textContent = `${appName} - 版本列表`;
+            versionsContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div>加载版本列表中...</div>';
+            
+            modal.classList.add('active');
+            
+            // 保存bundleID信息
+            document.getElementById('versionsContent').dataset.bundleId = bundleID;
+            
+            loadVersionsPage(bundleID, 1);
+        }
+        
+        function loadVersionsPageByBundleId(bundleID, page) {
+            const versionsContent = document.getElementById('versionsContent');
+            
+            if (page === 1) {
+                versionsContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div>加载版本列表中...</div>';
+            }
+            
+            fetch(`/terminal/list-versions?bundle_id=${encodeURIComponent(bundleID)}&page=${page}&limit=10`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (page === 1) {
+                        // 第一页，清空内容
+                        versionsContent.innerHTML = '';
+                    }
+                    
+                    // 只显示当前页的数据，直接追加到HTML
+                    displayVersions(data.data || [], bundleID);
+                    
+                    // 更新分页信息
+                    updateVersionsPaginationByBundleId(data.data.pagination || {}, bundleID);
+                } else {
+                    if (page === 1) {
+                        const needsPurchase = data.message && data.message.toLowerCase().includes('license is required');
+                        
+                        if (needsPurchase && bundleID) {
+                            versionsContent.innerHTML = `
+                                <div class="error-message">
+                                    ${escapeHtml(data.message)}
+                                </div>
+                                <div style="text-align: center; margin-top: 20px;">
+                                    <button id="purchaseBtn" class="btn btn-primary" style="padding: 12px 24px;">
+                                        💳 购买应用
+                                    </button>
+                                </div>
+                            `;
+                            
+                            document.getElementById('purchaseBtn').addEventListener('click', () => {
+                                handlePurchaseByBundleId(bundleID);
+                            });
+                        } else {
+                            versionsContent.innerHTML = `<div class="error-message">${escapeHtml(data.message)}</div>`;
+                        }
+                    }
+                    document.getElementById('versionsPagination').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                if (page === 1) {
+                    versionsContent.innerHTML = '<div class="error-message">获取版本列表失败，请稍后重试</div>';
+                }
+                document.getElementById('versionsPagination').style.display = 'none';
+            });
+        }
+        
+        function updateVersionsPaginationByBundleId(pagination, bundleID) {
+            const paginationDiv = document.getElementById('versionsPagination');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            
+            if (pagination.has_next) {
+                paginationInfo.textContent = `已加载 ${Math.min(pagination.page * pagination.limit, pagination.total)} / ${pagination.total} 个版本`;
+                paginationDiv.style.display = 'flex';
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.textContent = '加载更多';
+                loadMoreBtn.onclick = () => {
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.textContent = '加载中...';
+                    loadVersionsPageByBundleId(bundleID, pagination.page + 1);
+                };
+            } else {
+                paginationDiv.style.display = 'none';
+            }
+        }
+        
+        function loadVersionsPage(bundleID, page) {
+            const versionsContent = document.getElementById('versionsContent');
+            
+            if (page === 1) {
+                versionsContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div>加载版本列表中...</div>';
+            }
+            
+            fetch(`/terminal/list-versions?bundle_id=${encodeURIComponent(bundleID)}&page=${page}&limit=10`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (page === 1) {
+                        // 第一页，清空内容
+                        versionsContent.innerHTML = '';
+                    }
+                    
+                    // 只显示当前页的数据，直接追加到HTML
+                    displayVersions(data.data || [], bundleID);
+                    
+                    // 更新分页信息
+                    updateVersionsPagination(data.data.pagination || {}, bundleID);
+                } else {
+                    if (page === 1) {
+                        // 检查是否需要购买
+                        const needsPurchase = data.message && data.message.toLowerCase().includes('license is required');
+                        
+                        if (needsPurchase && bundleID) {
+                            versionsContent.innerHTML = `
+                                <div class="error-message">
+                                    ${escapeHtml(data.message)}
+                                </div>
+                                <div style="text-align: center; margin-top: 20px;">
+                                    <button id="purchaseBtn" class="btn btn-primary" style="padding: 12px 24px;">
+                                        💳 购买应用
+                                    </button>
+                                </div>
+                            `;
+                            
+                            // 绑定购买按钮点击事件
+                            document.getElementById('purchaseBtn').addEventListener('click', () => {
+                                handlePurchase(bundleID);
+                            });
+                        } else {
+                            versionsContent.innerHTML = `<div class="error-message">${escapeHtml(data.message)}</div>`;
+                        }
+                    }
+                    document.getElementById('versionsPagination').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                if (page === 1) {
+                    versionsContent.innerHTML = '<div class="error-message">获取版本列表失败，请稍后重试</div>';
+                }
+                document.getElementById('versionsPagination').style.display = 'none';
+            });
+        }
+        
+        function updateVersionsPagination(pagination, bundleID) {
+            const paginationDiv = document.getElementById('versionsPagination');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            
+            if (pagination.has_next) {
+                paginationInfo.textContent = `已加载 ${Math.min(pagination.page * pagination.limit, pagination.total)} / ${pagination.total} 个版本`;
+                paginationDiv.style.display = 'flex';
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.textContent = '加载更多';
+                loadMoreBtn.onclick = () => {
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.textContent = '加载中...';
+                    loadVersionsPage(bundleID, pagination.page + 1);
+                };
+            } else {
+                paginationDiv.style.display = 'none';
+            }
+        }
+        
+        function displayVersions(data, bundleID) {
+            const versionsContent = document.getElementById('versionsContent');
+            
+            // 处理不同格式的返回数据
+            let versions = [];
+            
+            if (Array.isArray(data)) {
+                versions = data;
+            } else if (data.versions && Array.isArray(data.versions)) {
+                versions = data.versions;
+            } else if (typeof data === 'object' && data.version) {
+                // 单个版本对象
+                versions = [data];
+            }
+            
+            if (versions.length === 0 && versionsContent.children.length === 0) {
+                versionsContent.innerHTML = '<div class="no-results">没有找到版本信息</div>';
+                return;
+            }
+            
+            // 直接追加当前页的版本到HTML（不重新渲染）
+            versions.forEach((version) => {
+                const versionItem = document.createElement('div');
+                versionItem.className = 'version-item';
+                
+                // 提取版本号 - 优先使用 displayVersion
+                let versionNumber = version.displayVersion || version.version || version.versionNumber || version.versionString || '未知版本';
+                
+                // 提取文件大小
+                let fileSize = '';
+                if (version.fileSizeBytes) {
+                    fileSize = formatBytes(version.fileSizeBytes);
+                } else if (version.fileSize) {
+                    fileSize = version.fileSize;
+                } else if (version.size) {
+                    fileSize = formatBytes(version.size);
+                }
+                
+                let html = `
+                    <div class="version-header">
+                        <div>
+                            <span class="version-number">版本 ${escapeHtml(String(versionNumber))}</span>
+                            ${fileSize ? `<span class="version-size" style="margin-left: 10px;">📦 ${fileSize}</span>` : ''}
+                        </div>
+                        <button class="download-btn" data-version-id="${version.externalVersionID || ''}" data-bundle-id="${bundleID || ''}" data-display-version="${version.displayVersion || ''}">⬇️ 下载</button>
+                    </div>
+                `;
+                
+                // 添加详细信息
+                let hasDetails = false;
+                let detailsHtml = '';
+                
+                if (version.releaseNotes) {
+                    detailsHtml += `<div class="version-detail-item"><span class="version-label">更新说明:</span><span class="version-value">${escapeHtml(version.releaseNotes)}</span></div>`;
+                    hasDetails = true;
+                }
+                
+                // 优先使用 releaseDate 字段
+                if (version.releaseDate) {
+                    detailsHtml += `<div class="version-detail-item"><span class="version-label">发布日期:</span><span class="version-value">${escapeHtml(formatDate(version.releaseDate))}</span></div>`;
+                    hasDetails = true;
+                } else if (version.time) {
+                    detailsHtml += `<div class="version-detail-item"><span class="version-label">发布日期:</span><span class="version-value">${escapeHtml(formatDate(version.time))}</span></div>`;
+                    hasDetails = true;
+                } else if (version.publishDate) {
+                    detailsHtml += `<div class="version-detail-item"><span class="version-label">发布日期:</span><span class="version-value">${escapeHtml(formatDate(version.publishDate))}</span></div>`;
+                    hasDetails = true;
+                }
+                
+                if (version.bundleVersion) {
+                    detailsHtml += `<div class="version-detail-item"><span class="version-label">Bundle:</span><span class="version-value">${escapeHtml(version.bundleVersion)}</span></div>`;
+                    hasDetails = true;
+                }
+                
+                if (hasDetails) {
+                    html += `<div class="version-details">${detailsHtml}</div>`;
+                }
+                
+                versionItem.innerHTML = html;
+                versionsContent.appendChild(versionItem);
+                
+                // 为下载按钮添加事件监听
+                const downloadBtn = versionItem.querySelector('.download-btn');
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const versionId = downloadBtn.dataset.versionId;
+                        const bundleIdData = downloadBtn.dataset.bundleId;
+                        const displayVersion = downloadBtn.dataset.displayVersion;
+                        if (versionId && bundleIdData) {
+                            handleDownload(versionId, bundleIdData, displayVersion, downloadBtn);
+                        }
+                    });
+                }
+            });
+        }
+        
+        function handleDownload(versionId, bundleId, displayVersion, btn) {
+            btn.disabled = true;
+            btn.classList.add('downloading');
+            btn.textContent = '下载中...';
+            
+            // 连接到下载进度 WebSocket
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const ws = new WebSocket(`${protocol}//${window.location.host}/ws/download/`);
+            
+            let progressContainer = null;
+            let animationInterval = null;
+            let currentProgress = 0;
+            let isDownloading = false;
+            
+            ws.onopen = () => {
+                // 创建进度显示容器
+                progressContainer = document.createElement('div');
+                progressContainer.className = 'download-progress-container';
+                progressContainer.innerHTML = `
+                    <div class="download-progress-title">正在下载...</div>
+                    <div class="download-progress-bar">
+                        <div class="download-progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="download-progress-info">
+                        <span class="download-percent">0%</span>
+                    </div>
+                    <div class="download-progress-status">正在初始化...</div>
+                `;
+                document.body.appendChild(progressContainer);
+                
+                // 发送下载请求
+                ws.send(JSON.stringify({
+                    type: 'start_download',
+                    bundle_id: bundleId,
+                    version_id: versionId,
+                    display_version: displayVersion
+                }));
+                
+                isDownloading = true;
+                
+                // 启动动画进度（如果没有接收到真实进度数据）
+                animationInterval = setInterval(() => {
+                    if (isDownloading && currentProgress < 90) {
+                        // 缓慢增加进度到 90%
+                        const increment = Math.random() * 5 + 1;
+                        currentProgress = Math.min(currentProgress + increment, 90);
+                        
+                        const progressFill = progressContainer?.querySelector('.download-progress-fill');
+                        const percentSpan = progressContainer?.querySelector('.download-percent');
+                        
+                        if (progressFill) {
+                            progressFill.style.width = currentProgress + '%';
+                        }
+                        if (percentSpan) {
+                            percentSpan.textContent = Math.round(currentProgress) + '%';
+                        }
+                    }
+                }, 200);
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                
+                if (!progressContainer) return;
+                
+                const progressFill = progressContainer.querySelector('.download-progress-fill');
+                const percentSpan = progressContainer.querySelector('.download-percent');
+                const detailsSpan = progressContainer.querySelector('.download-details');
+                const statusSpan = progressContainer.querySelector('.download-progress-status');
+                
+                switch (message.type) {
+                    case 'download_started':
+                        statusSpan.textContent = message.message;
+                        statusSpan.className = 'download-progress-status';
+                        break;
+                    
+                    case 'download_progress':
+                        // 如果收到真实进度，更新动画进度
+                        currentProgress = Math.min(message.progress, 100);
+                        progressFill.style.width = currentProgress + '%';
+                        percentSpan.textContent = Math.round(currentProgress) + '%';                       
+                        statusSpan.className = 'download-progress-status';
+                        break;
+                    
+                    case 'download_success':
+                        isDownloading = false;
+                        if (animationInterval) clearInterval(animationInterval);
+                        
+                        currentProgress = 100;
+                        progressFill.style.width = '100%';
+                        percentSpan.textContent = '100%';
+                        statusSpan.textContent = '✓ 下载完成';
+                        statusSpan.className = 'download-progress-status success';
+                        
+                        btn.disabled = false;
+                        btn.classList.remove('downloading');
+                        btn.textContent = '✓ 已完成';
+                        
+                        // 2秒后关闭进度条和恢复按钮
+                        setTimeout(() => {
+                            progressContainer.classList.add('hide');
+                            setTimeout(() => {
+                                progressContainer.remove();
+                            }, 300);
+                            
+                            btn.textContent = '⬇️ 下载';
+                        }, 2000);
+                        
+                        ws.close();
+                        break;
+                    
+                    case 'download_failed':
+                        isDownloading = false;
+                        if (animationInterval) clearInterval(animationInterval);
+                        
+                        statusSpan.textContent = '✗ 下载失败: ' + message.message;
+                        statusSpan.className = 'download-progress-status error';
+                        
+                        btn.disabled = false;
+                        btn.classList.remove('downloading');
+                        btn.textContent = '⬇️ 下载';
+                        
+                        setTimeout(() => {
+                            progressContainer.classList.add('hide');
+                            setTimeout(() => {
+                                progressContainer.remove();
+                            }, 300);
+                        }, 3000);
+                        
+                        ws.close();
+                        break;
+                    
+                    case 'error':
+                        isDownloading = false;
+                        if (animationInterval) clearInterval(animationInterval);
+                        
+                        statusSpan.textContent = '✗ 错误: ' + message.message;
+                        statusSpan.className = 'download-progress-status error';
+                        
+                        btn.disabled = false;
+                        btn.classList.remove('downloading');
+                        btn.textContent = '⬇️ 下载';
+                        
+                        setTimeout(() => {
+                            progressContainer.classList.add('hide');
+                            setTimeout(() => {
+                                progressContainer.remove();
+                            }, 300);
+                        }, 3000);
+                        
+                        ws.close();
+                        break;
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket 错误:', error);
+                isDownloading = false;
+                if (animationInterval) clearInterval(animationInterval);
+                
+                btn.disabled = false;
+                btn.classList.remove('downloading');
+                btn.textContent = '⬇️ 下载';
+                alert('下载连接出错，请重试');
+                
+                if (progressContainer) {
+                    progressContainer.classList.add('hide');
+                    setTimeout(() => {
+                        progressContainer.remove();
+                    }, 300);
+                }
+            };
+            
+            ws.onclose = () => {
+                // WebSocket 关闭时清理
+            };
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatDate(dateValue) {
+            if (!dateValue) return '';
+            
+            let date;
+            
+            // 如果是数字，可能是时间戳（秒或毫秒）
+            if (typeof dateValue === 'number') {
+                // 判断是秒还是毫秒（毫秒时间戳通常是13位数字）
+                if (dateValue > 9999999999) {
+                    date = new Date(dateValue); // 毫秒
+                } else {
+                    date = new Date(dateValue * 1000); // 秒
+                }
+            } 
+            // 如果是字符串，尝试解析
+            else if (typeof dateValue === 'string') {
+                // 首先尝试作为ISO字符串解析
+                date = new Date(dateValue);
+                
+                // 如果解析失败或结果无效，尝试当作时间戳解析
+                if (isNaN(date.getTime())) {
+                    const timestamp = parseInt(dateValue);
+                    if (!isNaN(timestamp)) {
+                        if (timestamp > 9999999999) {
+                            date = new Date(timestamp); // 毫秒
+                        } else {
+                            date = new Date(timestamp * 1000); // 秒
+                        }
+                    } else {
+                        return dateValue; // 无法解析，返回原值
+                    }
+                }
+            } else {
+                return String(dateValue);
+            }
+            
+            // 检查日期是否有效
+            if (isNaN(date.getTime())) {
+                return String(dateValue);
+            }
+            
+            // 格式化为: YYYY-MM-DD HH:mm:ss
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+        
+        // 购买应用
+        async function handlePurchase(bundleID) {
+            const purchaseBtn = document.getElementById('purchaseBtn');
+            if (!purchaseBtn) return;
+            
+            purchaseBtn.disabled = true;
+            purchaseBtn.textContent = '购买中...';
+            
+            try {
+                const response = await fetch('/terminal/purchase', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        bundle_id: bundleID
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    purchaseBtn.textContent = '✓ 购买成功';
+                    purchaseBtn.style.background = '#28a745';
+                    
+                    // 2秒后重新加载版本列表
+                    setTimeout(() => {
+                        loadVersionsPage(bundleID, 1);
+                    }, 2000);
+                } else {
+                    alert('购买失败: ' + data.message);
+                    purchaseBtn.disabled = false;
+                    purchaseBtn.textContent = '💳 购买应用';
+                }
+            } catch (error) {
+                alert('购买出错，请稍后重试');
+                purchaseBtn.disabled = false;
+                purchaseBtn.textContent = '💳 购买应用';
+            }
+        }
+        
+        async function handlePurchaseByBundleId(bundleID) {
+            const purchaseBtn = document.getElementById('purchaseBtn');
+            if (!purchaseBtn) return;
+            
+            purchaseBtn.disabled = true;
+            purchaseBtn.textContent = '购买中...';
+            
+            try {
+                const response = await fetch('/terminal/purchase', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        bundle_id: bundleID
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    purchaseBtn.textContent = '✓ 购买成功';
+                    purchaseBtn.style.background = '#28a745';
+                    
+                    // 2秒后重新加载版本列表
+                    setTimeout(() => {
+                        loadVersionsPageByBundleId(bundleID, 1);
+                    }, 2000);
+                } else {
+                    alert('购买失败: ' + data.message);
+                    purchaseBtn.disabled = false;
+                    purchaseBtn.textContent = '💳 购买应用';
+                }
+            } catch (error) {
+                alert('购买出错，请稍后重试');
+                purchaseBtn.disabled = false;
+                purchaseBtn.textContent = '💳 购买应用';
+            }
+        }
+        
+        // 关闭版本列表模态框
+        document.getElementById('closeVersionsBtn').addEventListener('click', () => {
+            document.getElementById('versionsModal').classList.remove('active');
+        });
+        
+        // 点击模态框外部关闭
+        document.getElementById('versionsModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('versionsModal')) {
+                document.getElementById('versionsModal').classList.remove('active');
+            }
+        });
+        
+        // 标签导航功能
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.getAttribute('data-tab');
+                
+                // 更新标签状态
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // 显示/隐藏对应的内容
+                document.getElementById('searchSection').style.display = tabName === 'search' ? 'block' : 'none';
+                document.getElementById('ipaSection').style.display = tabName === 'ipa' ? 'block' : 'none';
+                
+                if (tabName === 'ipa') {
+                    loadIpaFiles();
+                }
+            });
+        });
+        
+        // 加载 IPA 文件列表
+        async function loadIpaFiles() {
+            const ipaContent = document.getElementById('ipaContent');
+            ipaContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div>加载中...</div>';
+            
+            try {
+                const response = await fetch('/terminal/ipa/list');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayIpaFiles(data.data);
+                } else {
+                    ipaContent.innerHTML = `<div class="error-message">${data.message}</div>`;
+                }
+            } catch (error) {
+                ipaContent.innerHTML = '<div class="error-message">加载失败，请稍后重试</div>';
+            }
+        }
+        
+        function displayIpaFiles(bundles) {
+            const ipaContent = document.getElementById('ipaContent');
+            
+            if (!bundles || bundles.length === 0) {
+                ipaContent.innerHTML = '<div class="ipa-empty">暂无 IPA 文件</div>';
+                return;
+            }
+            
+            ipaContent.innerHTML = '';
+            
+            bundles.forEach((bundle, bundleIndex) => {
+                const bundleDiv = document.createElement('div');
+                bundleDiv.className = 'ipa-bundle';
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'ipa-bundle-header';
+                headerDiv.innerHTML = `
+                    <div>
+                        <span class="ipa-toggle">▶</span>
+                        <span class="ipa-bundle-title">${escapeHtml(bundle.bundle_id)}</span>
+                    </div>
+                    <div class="ipa-bundle-info">
+                        <span>📦 ${bundle.file_count} 个文件</span>
+                        <span>💾 ${bundle.total_size_display}</span>
+                    </div>
+                `;
+                
+                const filesDiv = document.createElement('div');
+                filesDiv.className = 'ipa-files';
+                
+                bundle.files.forEach((file) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'ipa-file-item';
+                    
+                    fileItem.innerHTML = `
+                        <div class="ipa-file-info">
+                            <div class="ipa-file-name">📄 ${escapeHtml(file.name)}</div>
+                            <div class="ipa-file-meta">
+                                大小: ${file.size_display} | 修改时间: ${file.mtime_display}
+                            </div>
+                        </div>
+                        <div class="ipa-file-actions">
+                            <button class="ipa-action-btn ipa-download-btn" onclick="downloadIpaFile('${file.path}', '${escapeHtml(file.name)}')">⬇️ 下载</button>
+                            <button class="ipa-action-btn ipa-delete-btn" onclick="deleteIpaFile('${file.path}', '${escapeHtml(file.name)}')">🗑️ 删除</button>
+                        </div>
+                    `;
+                    
+                    filesDiv.appendChild(fileItem);
+                });
+                
+                headerDiv.addEventListener('click', () => {
+                    const toggle = headerDiv.querySelector('.ipa-toggle');
+                    filesDiv.classList.toggle('show');
+                    toggle.textContent = filesDiv.classList.contains('show') ? '▼' : '▶';
+                });
+                
+                bundleDiv.appendChild(headerDiv);
+                bundleDiv.appendChild(filesDiv);
+                ipaContent.appendChild(bundleDiv);
+            });
+        }
+        
+        function downloadIpaFile(filePath, fileName) {
+            // 直接跳转到下载 URL
+            window.location.href = `/terminal/ipa/download?path=${encodeURIComponent(filePath)}`;
+        }
+        
+        async function deleteIpaFile(filePath, fileName) {
+            try {
+                const response = await fetch('/terminal/ipa/delete', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        path: filePath
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadIpaFiles();  // 直接重新加载列表，不弹出信息
+                } else {
+                    alert(`删除失败: ${data.message}`);
+                }
+            } catch (error) {
+                alert('删除出错，请稍后重试');
+            }
+        }
+    </script>
+</body>
+</html>
